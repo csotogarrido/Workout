@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Home Strength Sessions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Bebas+Neue&family=Oswald:wght@500;600&display=swap">
+<style>
+/* Layout: one phone-width column; session picker on top, then the session as a vertical run of step cards, log at the end. */
+:root{
+  /* Single dark look by request: black ground, red lines, buttons and titles, white small text, gray body text. */
+  --bg:#000000; --surface:#0b0b0b; --fg:#b9b9b9; --muted:#ffffff; --line:#c1121f;
+  --accent:#e5383b; --accent-soft:#240709; --on:#ffffff; --done:#3ecf6e; --part:#f4a340; --part-soft:#2a1a06;
+  --rest:#ff6b6b; --rest-soft:#170506;
+  --font-head:"Bebas Neue","Oswald","Arial Narrow",Impact,sans-serif;
+  --font-q:"Oswald","Arial Narrow",Arial,sans-serif;
+  --font-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:16px;line-height:1.45}
+.wrap{max-width:640px;margin:0 auto;padding-block:20px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:18px}
+h1,h2,h3{color:var(--accent);font-family:var(--font-head);font-weight:400;margin:0;text-wrap:balance;letter-spacing:.04em;line-height:1.05}
+h1{font-size:2.6rem}
+h2{font-size:2rem}
+h3{font-size:1.55rem}
+.sub{color:var(--muted);margin:4px 0 0}
+.label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.tabs{display:flex;gap:8px;align-items:center}
+.tabs button{font:inherit;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:6px 14px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--accent);color:var(--on);border-color:var(--accent)}
+.picker{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.pick{font:inherit;text-align:left;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);border-radius:12px;padding:12px;cursor:pointer;display:grid;gap:2px}
+.pick b{font-family:var(--font-head);font-weight:400;font-size:2.2rem;line-height:1;color:var(--accent)}
+.pick span{font-size:.9rem;color:var(--muted)}
+.pick[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.pick .last{font-size:.75rem;color:var(--muted)}
+.hint{font-size:.9rem;color:var(--muted);margin:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:12px}
+.exhead{display:flex;gap:14px;align-items:flex-start}
+.thumb{flex:0 0 112px;width:112px;aspect-ratio:1;border-radius:10px;background:var(--accent-soft);overflow:hidden;display:grid;place-items:center;color:var(--accent);font-family:var(--font-head);font-size:2rem;max-width:100%}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.exhead > div{min-width:0}
+.dose{font-family:var(--font-q);font-weight:600;font-size:1.1rem;color:var(--muted)}
+.meta{font-size:.92rem;color:var(--muted);margin:2px 0 0}
+.cue{margin:0;font-size:.95rem}
+.sets{display:grid;gap:8px}
+.set{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;border:1px solid var(--line)}
+.set.full{border-color:var(--done)}
+.set.partial{border-color:var(--part);background:var(--part-soft)}
+.set .n{font-weight:600;min-width:52px}
+.btn{font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--muted);padding:6px 12px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on)}
+.btn.ok[aria-pressed="true"]{background:var(--done);border-color:var(--done);color:var(--on)}
+.set label{display:flex;align-items:center;gap:6px;font-size:.92rem;color:var(--muted)}
+.set input{width:64px;font:inherit;padding:5px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.rest{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;background:var(--rest-soft);border-radius:10px;padding:10px 12px}
+.rest .what{flex:1 1 200px;min-width:0}
+.rest .what b{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--rest)}
+.timer{font:inherit;font-variant-numeric:tabular-nums;font-weight:600;border:1px solid var(--rest);color:var(--rest);background:transparent;border-radius:8px;padding:5px 12px;cursor:pointer;min-width:84px}
+.timer.running{background:var(--rest);color:var(--on)}
+ul.simple{margin:0;padding-left:20px;display:grid;gap:6px}
+.check{display:flex;gap:10px;align-items:flex-start}
+.check input{margin-top:4px;width:18px;height:18px;accent-color:var(--accent)}
+.log{display:grid;gap:12px}
+.row{display:grid;gap:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font:inherit;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:5px 12px;cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on)}
+textarea{font:inherit;width:100%;min-height:64px;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.progress{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.92rem}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--accent);color:var(--on);padding:10px 16px;border-radius:10px;font-weight:600}
+.q{display:grid;gap:6px}
+.q p{margin:0;font-family:var(--font-q);font-weight:500;font-size:1.1rem;text-transform:uppercase;letter-spacing:.02em;color:var(--fg)}
+.q small{color:var(--muted);font-size:.85rem}
+.verdict{border-radius:10px;padding:12px 14px;display:grid;gap:8px;background:var(--accent-soft)}
+.verdict.easy{background:var(--rest-soft)}
+.verdict.stop{background:var(--part-soft);border:1.5px solid var(--part)}
+.verdict b{font-family:var(--font-head);font-weight:400;letter-spacing:.04em;font-size:1.7rem;color:var(--accent)}
+.verdict p{margin:0}
+.hist{display:grid;gap:10px}
+details.hitem > summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+details.hitem > summary::-webkit-details-marker{display:none}
+details.hitem > summary .when{color:var(--muted);font-size:.85rem}
+details.hitem[open] > summary{margin-bottom:10px}
+.hx{font-family:var(--font-head);font-size:1.4rem;letter-spacing:.04em;color:var(--accent)}
+.badge{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;border-radius:999px;padding:3px 10px;border:1px solid var(--done);color:var(--done)}
+.badge.adapted{border-color:var(--part);color:var(--part)}
+.detail{display:grid;gap:10px;border-top:1px solid var(--line);padding-top:10px}
+.detail table{width:100%;border-collapse:collapse;font-size:.92rem}
+.detail td{padding:4px 0;vertical-align:top}
+.detail td:last-child{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap;padding-left:10px}
+.detail .k{color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.detail p{margin:0}
+.lastbox{border:1px dashed var(--line);border-radius:10px;padding:10px 12px;font-size:.92rem}
+.hitem{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--surface)}
+.hitem .top{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.hitem p{margin:4px 0 0;font-size:.92rem;color:var(--muted)}
+pre.export{white-space:pre-wrap;font-size:.8rem;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;max-height:260px;overflow:auto;margin:0}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:420px){.thumb{flex-basis:88px;width:88px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Home Strength Sessions</h1>
+    <p class="sub">Pick today's session, work through it, tick each set, save the log.</p>
+  </header>
+  <nav class="tabs" aria-label="Views">
+    <button id="tab-train" aria-pressed="true">Train</button>
+    <button id="tab-history" aria-pressed="false">History</button>
+  </nav>
+
+  <main id="train">
+    <section class="card" id="checkin" style="margin-bottom:18px"></section>
+    <section style="display:grid;gap:10px">
+      <span class="label">1 · Choose the session</span>
+      <div class="picker" id="picker"></div>
+      <p class="hint">On a cueca day and the day after, skip A and D. If yesterday felt inflamed, choose Easy.</p>
+    </section>
+    <div id="session" style="display:grid;gap:14px;margin-top:18px"></div>
+  </main>
+
+  <main id="history" hidden></main>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const IMG = id => `https://res.cloudinary.com/m1gcufl1/image/upload/${id}.png`;
+const WARMUP = [
+  "Pelvic tilts on your back, knees bent, slow breathing: 10 rocks",
+  "Knees to chest, gentle rock: 30 s",
+  "Stand up and march in place with easy arm swings: 1 min"
+];
+const SESSIONS = {
+  A:{name:"Legs and glutes", exercises:[
+    {name:"Box squat to a chair", sets:2, reps:"8–10", plan:10, unit:"reps", equip:"Bodyweight, then 1 DB held at the chest", cue:"Touch the chair lightly, don't sit. Knees over the 2nd and 3rd toes.", between:"Standing table, hands on the chair back", next:"Standing table at the wall, then put the ankle cuff on", img:"v1795389601/e7206bc2-401e-4711-b002-c7fdef3931e6"},
+    {name:"Standing hip abduction", sets:2, reps:"10 per leg", plan:10, unit:"reps", equip:"Ankle cuff on the hook, yellow or green", cue:"Hold the wall, leg out to the side, toes forward, no leaning.", between:"Other leg is the rest. After both legs: standing table at the wall", next:"Lie on the mat: knees to chest", img:"v1795389679/1ca36cd8-1c0d-45ba-affe-641882708888"},
+    {name:"Glute bridge", sets:2, reps:"10, 2 s hold at top", plan:10, unit:"reps", equip:"Loop band above the knees", cue:"Ribs down, stop when hips and knees line up. Don't arch the low back.", between:"Knees to chest", next:null, img:"v1795389746/0a15a2e9-1580-4c19-845f-198a47af97e1"}],
+    cooldown:["Lying hamstring stretch: 30 s per leg","Child's pose: 45 s"]},
+  B:{name:"Upper body", exercises:[
+    {name:"Supported one-arm row", sets:2, reps:"10 per arm", plan:10, unit:"reps", equip:"1 DB, free hand (or fist) on the kitchen counter", cue:"Standing-table position, one foot forward, counter holds your back flat. Elbow back toward the hip, squeeze the shoulder blade. No twisting.", between:"Other arm is the rest. After both arms: standing table at the counter", next:"Standing table at the counter, put the dumbbell down", img:"v1795390455/992cb052-022b-40dd-9980-b08521e7ae73"},
+    {name:"Incline push-up", sets:2, reps:"6–10", plan:10, unit:"reps", equip:"Hands on the kitchen counter, gripping dumbbell handles or on fists", cue:"Neutral wrists. Stop well before the shoulders complain.", between:"Standing table at the counter", next:"Lie on the mat: knees to chest", img:"v1795389872/94a3373a-12af-49fc-b2b7-dbe5bf6b9cf6"},
+    {name:"Floor press", sets:2, reps:"10", plan:10, unit:"reps", equip:"2 DB, lying on the mat, knees bent", cue:"Palms facing each other. Elbows stop at the floor, which protects the shoulders.", between:"Knees to chest, weights resting beside you", next:null, img:"v1795389919/6436993b-40f4-4d83-9eca-7d07b3a32c38"}],
+    cooldown:["Child's pose: 45 s","Knees to chest: 30 s, then stand up slowly"]},
+  C:{name:"Core and balance", exercises:[
+    {name:"Dead bug", sets:2, reps:"6 per side", plan:6, unit:"reps", equip:"Mat", cue:"Low back stays gently pressed into the floor. Move slowly.", between:"Knees to chest", next:"Roll to hands and knees: child's pose", img:"v1795389975/daf1200d-2b34-4379-b218-10ffdd41cf5e"},
+    {name:"Bird dog", sets:2, reps:"6 per side, 3 s hold", plan:6, unit:"reps", equip:"Mat, on fists to spare the wrist", cue:"Reach long, not high. Hips stay level.", between:"Child's pose", next:"Stand up at the wall: standing table", img:"v1795390036/244398a7-3cdc-4692-96fc-86424070fd22"},
+    {name:"Single-leg stance", sets:2, reps:"30 s per leg", plan:30, unit:"s", equip:"Near the wall", cue:"Soft knee, kneecap over the toes. Good carry-over to cueca stances.", between:"Other leg is the rest. After both legs: standing table", next:null, img:"v1795390121/2ab0b3e1-e9be-449f-9046-ad21955997d0"}],
+    cooldown:["Standing table: 30 s","Lie down: knees to chest 30 s","Lying hamstring stretch: 30 s per leg"]},
+  D:{name:"Back of the body", exercises:[
+    {name:"Romanian deadlift, short range", sets:2, reps:"8", plan:8, unit:"reps", equip:"2 DB, light. Before set 1: 5 practice hinges with the long bar along your spine", cue:"Hips back, flat back, soft knees. Lower only to just below the knees. Physio to confirm.", between:"Standing table, weights on the floor", next:"Standing table at the wall, then put the ankle cuff on", img:"v1795390121/2ab0b3e1-e9be-449f-9046-ad21955997d0"},
+    {name:"Standing hamstring curl", sets:2, reps:"10 per leg", plan:10, unit:"reps", equip:"Ankle cuff on the hook, facing the wall", cue:"Heel toward the bottom, thigh stays still.", between:"Other leg is the rest. After both legs: standing table at the wall", next:"Lie on the mat: knees to chest", img:"v1795390274/2fd68421-0226-44b7-be6a-d36e73e8e78e"},
+    {name:"Bridge march", sets:2, reps:"6 per side", plan:6, unit:"reps", equip:"Mat", cue:"Hold a bridge, lift one foot a few cm, hips stay level.", between:"Knees to chest", next:null, img:"v1795390327/da60e7fc-b460-4f28-b6e2-97b7ead2bee1"}],
+    cooldown:["Lying hamstring stretch: 30 s per leg","Child's pose: 45 s"]},
+  E:{name:"Easy day", easy:true, steps:[
+    "Warm-up steps 1 to 3 (2 min)","Lying hamstring stretch: 45 s per leg","Knees to chest: 45 s","Child's pose: 30 s, twice","Standing table: 30 s, twice",
+    "Slow standing hip circles holding the wall: 5 per direction per leg, stop before any groin pinch","Seated sciatic nerve glide: 8 per leg, gentle, no tingling (physio to confirm)","Easy walk: 5 min"]}
+};
+const LABEL = {A:"A",B:"B",C:"C",D:"D",E:"Easy"};
+const KEY = "hss-log-v1";
+const SHEET_KEY = "hss-sheet-url";
+let sheetUrl = "";
+try{ sheetUrl = localStorage.getItem(SHEET_KEY)||""; }catch(e){}
+function sendToSheet(entry){
+  if(!sheetUrl) return Promise.resolve(false);
+  return fetch(sheetUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(entry)})
+    .then(()=>{ entry.synced=true; persist(); return true; }).catch(()=>false);
+}
+
+let store = [];
+try{ store = JSON.parse(localStorage.getItem(KEY)||"[]"); }catch(e){ store = []; }
+function persist(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); return true; }catch(e){ return false; } }
+
+let current = null, state = null;
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>t.hidden=true,2200); }
+
+const ORDER=["A","B","C","D"];
+function nextInRotation(){
+  let next="A";
+  store.forEach(e=>{ if(e.session===next) next=ORDER[(ORDER.indexOf(next)+1)%4]; });
+  return next;
+}
+const QUESTIONS=[
+  {k:"flag", q:"Any tingling or warning signs right now?", hint:"Red flags: tingling stronger or spreading, leg weakness, numbness in the groin or saddle area, a hip or knee that locks or gives way, chest pain.", opts:["No","My usual mild tingling","Yes, a red flag"]},
+  {k:"felt", q:"How did your body feel after the last session or dance?", hint:"Burn that faded is normal. Inflamed means deep, aching or hot pain, often hours later.", opts:["Good","A bit sore","Inflamed"]},
+  {k:"pain", q:"Pain right now?", hint:"Tick every place that hurts, then say how much.", type:"areas", areas:["Back","Hip","Knee"], opts:["0–1","2–3","4 or more"]},
+  {k:"dance", q:"Cueca today or yesterday?", hint:"Includes a class or a night out planned for today.", opts:["No","Yes"]},
+  {k:"breath", q:"How is your breathing today?", hint:"Pollen, asthma, a cold.", opts:["Fine","Tight or wheezy"]}
+];
+const DAY=864e5;
+function isStandard(e){
+  if(e.sets) return e.sets.every(x=>x.full);
+  if(e.steps){ const [a,b]=e.steps.split("/").map(Number); return a===b; }
+  return true;
+}
+function fmtDay(d){ return new Date(d).toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"}); }
+function historySignals(){
+  const sig={why:[],moderate:[],notes:[]}; const last=store[store.length-1]; if(!last) return sig;
+  const now=Date.now(), age=now-new Date(last.date);
+  if(age<2*DAY){
+    if(last.feel==="Inflamed") sig.why.push(`your last session (${LABEL[last.session]}) was logged as inflamed`);
+    else if(last.feel==="Nerve (tingling)") sig.why.push(`your last session (${LABEL[last.session]}) caused tingling`);
+    else if(last.pain!=null && last.pain>=4) sig.why.push(`your last session (${LABEL[last.session]}) reached pain ${last.pain}`);
+    else {
+      if(last.stab==="Worse") sig.moderate.push("stability was worse after your last session");
+      if(!isStandard(last)) sig.moderate.push("your last session was adapted");
+    }
+  }
+  if(last.session!=="E" && new Date(last.date).toDateString()===new Date().toDateString()) sig.why.push("you already trained today");
+  const week=store.filter(e=>now-new Date(e.date)<7*DAY);
+  if(week.length>=6 && !week.some(e=>e.session==="E")) sig.why.push("you haven't had an Easy day in the last 7 days");
+  return sig;
+}
+let check={areas:[]};
+function answered(q){
+  if(q.type!=="areas") return check[q.k]!=null;
+  return check.noPain===true || (check.areas.length>0 && check.pain!=null);
+}
+function recommend(){
+  if(QUESTIONS.some(q=>!answered(q))) return null;
+  const next=nextInRotation();
+  if(check.flag==="Yes, a red flag") return {stop:true};
+  const why=[];
+  if(check.flag==="My usual mild tingling") why.push("the nerve is irritated today");
+  const moderate=[];
+  if(check.felt==="A bit sore") moderate.push("you are a bit sore");
+  if(!check.noPain&&check.pain==="2–3") moderate.push("you have some pain");
+  if(check.dance==="Yes") moderate.push("you danced cueca");
+  const hs=historySignals();
+  moderate.push(...hs.moderate); why.push(...hs.why);
+  if(moderate.length>=2) why.push(moderate.join(" and "));
+  if(check.felt==="Inflamed") why.push("your body felt inflamed");
+  if(check.pain==="4 or more") why.push("pain is 4 or more");
+  if(check.breath==="Tight or wheezy") why.push("your breathing is not settled");
+  if(why.length) return {k:"E", why:`Easy day, because ${why.join(" and ")}. The rotation waits at ${next}.`};
+  const legPain = !check.noPain && check.pain==="2–3" && (check.areas.includes("Hip")||check.areas.includes("Knee"));
+  if((check.dance==="Yes"||legPain) && (next==="A"||next==="D")){
+    const last=[...store].reverse().find(e=>e.session==="B"||e.session==="C");
+    const alt= last&&last.session==="B" ? "C" : "B";
+    const reason = check.dance==="Yes" ? "because of cueca: no leg sessions on a dance day or the day after" : `to rest your ${check.areas.filter(a=>a!=="Back").join(" and ").toLowerCase()}`;
+    return {k:alt, why:`Session ${alt} instead of ${next}, ${reason}. ${next} stays next in the rotation.`};
+  }
+  const soft = check.felt==="A bit sore"||(!check.noPain&&check.pain==="2–3") ? " Keep the load as last time, no increase today." : "";
+  const prev=[...store].reverse().find(e=>e.session===next);
+  const prevNote = prev && !isStandard(prev) ? ` Last time ${next} was adapted, so repeat the same load and aim to complete it.` : (moderate.length===1 && !soft ? ` Note: ${moderate[0]}. Keep the load as last time.` : "");
+  return {k:next, why:`Session ${next}, the next one in your rotation.${soft}${prevNote}`};
+}
+function renderCheckin(){
+  const r=recommend();
+  let h=`<span class="label">0 · Quick check before you start</span>`;
+  const last=store[store.length-1];
+  if(last) h+=`<div class="lastbox"><span class="k label">Last session</span><div>${LABEL[last.session]==="Easy"?"Easy day":"Session "+LABEL[last.session]} · ${fmtDay(last.date)} · <b style="color:${isStandard(last)?"var(--done)":"var(--part)"}">${isStandard(last)?"Standard":"Adapted"}</b>${last.pain!=null?` · pain ${last.pain}`:""}${last.feel?` · ${esc(last.feel)}`:""}${last.stab?` · stability ${esc(last.stab.toLowerCase())}`:""}</div>${last.notes?`<div style="color:var(--muted)">“${esc(last.notes)}”</div>`:""}</div>`;
+  h+=QUESTIONS.map(q=>{
+    if(q.type==="areas"){
+      const boxes = q.areas.map(a=>`<label class="check" style="align-items:center"><input type="checkbox" id="area-${a}" data-area="${a}" ${check.areas.includes(a)?"checked":""}><span>${a}</span></label>`).join("")
+        + `<label class="check" style="align-items:center"><input type="checkbox" id="area-none" data-area="none" ${check.noPain?"checked":""}><span>No pain</span></label>`;
+      const level = check.areas.length ? `<small>How much, at the worst spot? (0 to 10)</small><div class="chips" data-q="pain">${q.opts.map(o=>`<button data-v="${esc(o)}" aria-pressed="${check.pain===o}">${esc(o)}</button>`).join("")}</div>` : "";
+      return `<div class="q"><p>${esc(q.q)}</p><small>${esc(q.hint)}</small><div style="display:flex;flex-wrap:wrap;gap:8px 18px">${boxes}</div>${level}</div>`;
+    }
+    return `<div class="q"><p>${esc(q.q)}</p><small>${esc(q.hint)}</small><div class="chips" data-q="${q.k}">${q.opts.map(o=>`<button data-v="${esc(o)}" aria-pressed="${check[q.k]===o}">${esc(o)}</button>`).join("")}</div></div>`;
+  }).join("");
+  if(!r) h+=`<p class="hint">Answer all five and I'll suggest today's session. Next in your rotation: ${nextInRotation()}.</p>`;
+  else if(r.stop) h+=`<div class="verdict stop"><b>Don't train today</b><p>Contact your physiotherapist or doctor. Numbness in the groin or saddle area, or any change in bladder or bowel control, is urgent: go to the emergency room.</p></div>`;
+  else h+=`<div class="verdict ${r.k==="E"?"easy":""}"><b>Today: ${r.k==="E"?"Easy day":"Session "+r.k}</b><p>${esc(r.why)}</p><div><button class="btn primary" id="go">Start ${r.k==="E"?"Easy day":"Session "+r.k}</button></div></div>`;
+  $("#checkin").innerHTML=h;
+  $("#checkin").querySelectorAll(".chips").forEach(g=>g.querySelectorAll("button").forEach(b=>b.onclick=()=>{ check[g.dataset.q]=b.dataset.v; renderCheckin(); }));
+  $("#checkin").querySelectorAll("[data-area]").forEach(c=>c.onchange=()=>{
+    const a=c.dataset.area;
+    if(a==="none"){ check.noPain=c.checked; if(c.checked){ check.areas=[]; check.pain=null; } }
+    else { check.areas = c.checked ? [...check.areas,a] : check.areas.filter(x=>x!==a); if(c.checked) check.noPain=false; if(!check.areas.length) check.pain=null; }
+    renderCheckin();
+  });
+  const go=$("#go"); if(go) go.onclick=()=>select(r.k);
+}
+
+function lastDone(k){ const e=[...store].reverse().find(x=>x.session===k); return e ? new Date(e.date).toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"}) : "Not done yet"; }
+
+function renderPicker(){
+  $("#picker").innerHTML = Object.keys(SESSIONS).map(k=>`
+    <button class="pick" data-k="${k}" aria-pressed="${current===k}">
+      <b>${LABEL[k]}</b><span>${esc(SESSIONS[k].name)}</span><span class="last">Last: ${lastDone(k)}</span>
+    </button>`).join("");
+  document.querySelectorAll(".pick").forEach(b=>b.onclick=()=>select(b.dataset.k));
+}
+
+function select(k){
+  current = k;
+  const s = SESSIONS[k];
+  state = { warm:WARMUP.map(()=>false), sets:{}, cool:(s.cooldown||[]).map(()=>false), easy:(s.steps||[]).map(()=>false), pain:null, feel:null, stab:null, notes:"" };
+  renderPicker(); renderSession();
+  $("#session").scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+function thumb(ex,i){
+  return `<div class="thumb" data-fallback="${i+1}"><img src="${IMG(ex.img)}" alt="${esc(ex.name)}" loading="lazy" onerror="this.parentNode.textContent=this.parentNode.dataset.fallback"></div>`;
+}
+function restRow(kind, text, secs){
+  return `<div class="rest"><div class="what"><b>${kind}</b>${esc(text)}</div><button class="timer" data-secs="${secs}">${secs} s rest</button></div>`;
+}
+function checklist(items, key){
+  return `<div style="display:grid;gap:8px">${items.map((t,i)=>`<label class="check"><input type="checkbox" id="${key}-${i}" data-key="${key}" data-i="${i}" ${state[key][i]?"checked":""}><span>${esc(t)}</span></label>`).join("")}</div>`;
+}
+
+function renderSession(){
+  const s = SESSIONS[current], el = $("#session");
+  let h = `<div><span class="label">2 · Session ${LABEL[current]}</span><h2>${esc(s.name)}</h2></div>`;
+  if(s.easy){
+    h += `<section class="card"><h3>Mobility and relief, 15 min</h3>${checklist(s.steps,"easy")}</section>`;
+  } else {
+    h += `<section class="card"><h3>Warm-up · 2.5 min</h3>${checklist(WARMUP,"warm")}</section>`;
+    s.exercises.forEach((ex,i)=>{
+      h += `<section class="card"><div class="exhead">${thumb(ex,i)}<div>
+        <span class="label">Exercise ${i+1} of ${s.exercises.length}</span><h3>${esc(ex.name)}</h3>
+        <div class="dose">${ex.sets} × ${esc(ex.reps)}</div><p class="meta">${esc(ex.equip)}</p></div></div>
+        <p class="cue">${esc(ex.cue)}</p><div class="sets">`;
+      for(let n=0;n<ex.sets;n++){
+        const id=`${i}-${n}`, v=state.sets[id];
+        const cls = v==null?"":(v.full?"full":"partial");
+        h += `<div class="set ${cls}" data-id="${id}"><span class="n">Set ${n+1}</span>
+          <button class="btn ok" data-full="${id}" aria-pressed="${!!(v&&v.full)}">Done as planned</button>
+          <label for="in-${id}">or I did <input type="number" min="0" inputmode="numeric" id="in-${id}" data-part="${id}" placeholder="${ex.plan}" value="${v&&!v.full?v.done:""}"> ${ex.unit==="s"?"s":"reps"}</label></div>`;
+        if(n<ex.sets-1) h += restRow("Between sets", ex.between, 20);
+      }
+      h += `</div>`;
+      if(ex.next) h += restRow("Before the next exercise", ex.next, 30);
+      h += `</section>`;
+    });
+    h += `<section class="card"><h3>Cool-down · 2 min</h3>${checklist(s.cooldown,"cool")}</section>`;
+  }
+  h += `<section class="card log"><h3>3 · How did it go?</h3>
+    <div class="row"><span class="label">Worst pain during the session (0–10)</span><div class="chips" data-chip="pain">${[0,1,2,3,4,5,6,7,8,9,10].map(n=>`<button data-v="${n}" aria-pressed="${state.pain===n}">${n}</button>`).join("")}</div></div>
+    <div class="row"><span class="label">Feel</span><div class="chips" data-chip="feel">${["Burn (normal work)","Inflamed","Nerve (tingling)","Nothing special"].map(v=>`<button data-v="${v}" aria-pressed="${state.feel===v}">${v}</button>`).join("")}</div></div>
+    <div class="row"><span class="label">Stability</span><div class="chips" data-chip="stab">${["Better","Same","Worse"].map(v=>`<button data-v="${v}" aria-pressed="${state.stab===v}">${v}</button>`).join("")}</div></div>
+    <div class="row"><label class="label" for="notes">Notes (dance, sleep, pollen, load used)</label><textarea id="notes">${esc(state.notes)}</textarea></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn primary" id="save">Save session</button><span class="progress" id="prog"></span></div>
+    </section>`;
+  el.innerHTML = h;
+  bind(); updateProgress();
+}
+
+function bind(){
+  const el=$("#session");
+  el.querySelectorAll("input[type=checkbox]").forEach(c=>c.onchange=()=>{ state[c.dataset.key][+c.dataset.i]=c.checked; updateProgress(); });
+  el.querySelectorAll("[data-full]").forEach(b=>b.onclick=()=>{
+    const id=b.dataset.full, v=state.sets[id];
+    if(v&&v.full){ delete state.sets[id]; } else { const [i]=id.split("-"); state.sets[id]={full:true,done:SESSIONS[current].exercises[+i].plan}; el.querySelector(`#in-${id}`).value=""; }
+    refreshSet(id);
+  });
+  el.querySelectorAll("[data-part]").forEach(inp=>inp.oninput=()=>{
+    const id=inp.dataset.part, val=inp.value.trim();
+    if(val===""){ delete state.sets[id]; } else { state.sets[id]={full:false,done:Math.max(0,parseInt(val,10)||0)}; }
+    refreshSet(id);
+  });
+  el.querySelectorAll(".chips").forEach(g=>g.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    const k=g.dataset.chip; const v=k==="pain"?+b.dataset.v:b.dataset.v;
+    state[k] = state[k]===v ? null : v;
+    g.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed", String((k==="pain"?+x.dataset.v:x.dataset.v)===state[k])));
+  }));
+  $("#notes").oninput=e=>state.notes=e.target.value;
+  el.querySelectorAll(".timer").forEach(t=>t.onclick=()=>runTimer(t));
+  $("#save").onclick=save;
+}
+function refreshSet(id){
+  const row=document.querySelector(`.set[data-id="${id}"]`), v=state.sets[id];
+  row.classList.toggle("full", !!(v&&v.full)); row.classList.toggle("partial", !!(v&&!v.full));
+  row.querySelector("[data-full]").setAttribute("aria-pressed", String(!!(v&&v.full)));
+  updateProgress();
+}
+function totalSets(){ const s=SESSIONS[current]; return s.easy?0:s.exercises.reduce((a,e)=>a+e.sets,0); }
+function updateProgress(){
+  const s=SESSIONS[current], p=$("#prog"); if(!p) return;
+  if(s.easy){ p.textContent=`${state.easy.filter(Boolean).length} of ${s.steps.length} steps done`; return; }
+  const logged=Object.keys(state.sets).length, full=Object.values(state.sets).filter(v=>v.full).length;
+  p.textContent=`${logged} of ${totalSets()} sets logged · ${full} as planned`;
+}
+
+let audioCtx=null;
+function beep(){ try{ audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)(); const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.frequency.value=880; g.gain.value=.15; o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+.35);}catch(e){} try{navigator.vibrate&&navigator.vibrate(300);}catch(e){} }
+function runTimer(t){
+  if(t._iv){ clearInterval(t._iv); t._iv=null; t.classList.remove("running"); t.textContent=`${t.dataset.secs} s rest`; return; }
+  let left=+t.dataset.secs; t.classList.add("running"); t.textContent=`${left} s`;
+  try{ audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+  t._iv=setInterval(()=>{ left--; t.textContent=`${left} s`; if(left<=0){ clearInterval(t._iv); t._iv=null; t.classList.remove("running"); t.textContent="Done ✓"; beep(); } },1000);
+}
+
+function save(){
+  const s=SESSIONS[current];
+  const entry={ date:new Date().toISOString(), session:current, name:s.name, pain:state.pain, feel:state.feel, stab:state.stab, notes:state.notes.trim(), check:{...check}, id:"s"+Date.now().toString(36)+Math.random().toString(36).slice(2,6), synced:false };
+  if(s.easy){ entry.steps=`${state.easy.filter(Boolean).length}/${s.steps.length}`; }
+  else {
+    entry.sets=[]; s.exercises.forEach((ex,i)=>{ for(let n=0;n<ex.sets;n++){ const v=state.sets[`${i}-${n}`]; entry.sets.push({ex:ex.name,set:n+1,plan:ex.plan,unit:ex.unit,done:v?v.done:null,full:v?v.full:false}); } });
+  }
+  store.push(entry);
+  const ok=persist();
+  toast(ok?"Session saved":"Saved for now. This browser is not keeping data, copy it from History.");
+  sendToSheet(entry).then(sent=>{ if(sent) toast("Session saved and sent to your sheet"); });
+  current=null; state=null; check={areas:[]}; $("#session").innerHTML=""; renderCheckin(); renderPicker(); window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function entryText(e){
+  const d=new Date(e.date).toLocaleString(undefined,{dateStyle:"medium",timeStyle:"short"});
+  let t=`${d} · Session ${LABEL[e.session]} (${e.name}) · ${isStandard(e)?"Standard":"Adapted"}\n`;
+  if(e.sets){ const by={}; e.sets.forEach(x=>{ (by[x.ex]=by[x.ex]||[]).push(x.done==null?"–":(x.full?"✓":`${x.done}/${x.plan}`)); }); for(const k in by) t+=`  ${k}: ${by[k].join(", ")}\n`; }
+  if(e.steps) t+=`  Steps done: ${e.steps}\n`;
+  if(e.check&&e.check.flag) t+=`  Check-in: red flag ${e.check.flag??"–"}, felt ${e.check.felt??"–"}, pain ${e.check.noPain?"none":((e.check.areas||[]).join("/")+" "+(e.check.pain??"–"))}, cueca ${e.check.dance??"–"}, breathing ${e.check.breath??"–"}\n`;
+  t+=`  Pain: ${e.pain??"–"} · Feel: ${e.feel??"–"} · Stability: ${e.stab??"–"}\n`;
+  if(e.notes) t+=`  Notes: ${e.notes}\n`;
+  return t;
+}
+function detailHtml(e){
+  let h=`<div class="detail">`;
+  if(e.sets){
+    const by=[]; e.sets.forEach(x=>{ let g=by.find(y=>y.ex===x.ex); if(!g){ g={ex:x.ex,rows:[]}; by.push(g);} g.rows.push(x); });
+    h+=`<table>${by.map(g=>{ const allFull=g.rows.every(r=>r.full);
+      const sets=g.rows.map(r=>r.done==null?"not done":(r.full?"✓":`${r.done}/${r.plan}${r.unit==="s"?" s":""}`)).join(" · ");
+      return `<tr><td>${esc(g.ex)} <span class="badge ${allFull?"":"adapted"}" style="font-size:.65rem;padding:1px 7px">${allFull?"Standard":"Adapted"}</span></td><td>${sets}</td></tr>`; }).join("")}</table>`;
+  }
+  if(e.steps) h+=`<p>Easy day steps done: ${e.steps}</p>`;
+  h+=`<div><span class="k">After the session</span><p>Pain ${e.pain??"–"} · ${esc(e.feel??"feel not logged")} · stability ${esc(e.stab??"–")}</p></div>`;
+  if(e.check&&e.check.flag){ const c=e.check;
+    h+=`<div><span class="k">Check-in before</span><p>Signs: ${esc(c.flag??"–")} · felt ${esc(c.felt??"–")} · pain ${c.noPain?"none":esc(((c.areas||[]).join("/")+" "+(c.pain??"")).trim()||"–")} · cueca ${esc(c.dance??"–")} · breathing ${esc(c.breath??"–")}</p></div>`; }
+  h+=`<div><span class="k">Comments</span><p>${e.notes?esc(e.notes):"No comments"}</p></div></div>`;
+  return h;
+}
+function renderHistory(){
+  const el=$("#history");
+  if(!store.length){ el.innerHTML=`<div class="card"><h2>No sessions saved yet</h2><p class="hint">Finish a session in Train and press Save. Each one shows up here, with a summary you can copy and send for review.</p></div>`; return; }
+  const items=[...store].reverse();
+  el.innerHTML=`<div style="display:grid;gap:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2>${store.length} saved session${store.length>1?"s":""}</h2><button class="btn primary" id="copy">Copy all as text</button></div>
+    <div class="card" style="gap:8px"><span class="label">Google Sheet link</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="sheet" type="url" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(sheetUrl)}" style="flex:1 1 220px;min-width:0;font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)"><button class="btn" id="sheet-save">Save link</button></div>
+      <p class="hint">${sheetUrl?`Connected. ${store.filter(e=>!e.synced).length} session(s) not sent yet.`:"Paste the web app link from your sheet's script. Each saved session is then also added to the sheet."}</p>
+      ${sheetUrl&&store.some(e=>!e.synced)?`<div><button class="btn primary" id="sheet-sync">Send unsent sessions</button></div>`:""}</div>
+    <p class="hint">Tap a session to see the details.</p>
+    <div class="hist">${items.map(e=>{ const std=isStandard(e);
+      return `<details class="hitem"><summary><span><span class="hx">${LABEL[e.session]==="Easy"?"Easy day":"Session "+LABEL[e.session]}</span> <span class="when">${fmtDay(e.date)} · ${esc(e.name)}</span></span><span class="badge ${std?"":"adapted"}">${std?"Standard":"Adapted"}</span></summary>${detailHtml(e)}</details>`; }).join("")}</div>
+    <pre class="export" id="export" hidden>${esc(items.map(entryText).join("\n"))}</pre></div>`;
+  $("#sheet-save").onclick=()=>{ sheetUrl=$("#sheet").value.trim(); try{ localStorage.setItem(SHEET_KEY,sheetUrl); }catch(e){} toast(sheetUrl?"Sheet link saved":"Sheet link removed"); renderHistory(); };
+  const sy=$("#sheet-sync"); if(sy) sy.onclick=async()=>{ let n=0; for(const e of store.filter(x=>!x.synced)){ if(await sendToSheet(e)) n++; } toast(`${n} session(s) sent`); renderHistory(); };
+  $("#copy").onclick=()=>{ const ex=$("#export"), txt=ex.textContent;
+    const sel=()=>{ ex.hidden=false; const r=document.createRange(); r.selectNodeContents(ex); const s=getSelection(); s.removeAllRanges(); s.addRange(r); toast("Text selected, copy it from here"); };
+    try{ navigator.clipboard.writeText(txt).then(()=>toast("Copied"),sel); }catch(e){ sel(); } };
+}
+
+function show(view){
+  $("#train").hidden=view!=="train"; $("#history").hidden=view!=="history";
+  $("#tab-train").setAttribute("aria-pressed",String(view==="train")); $("#tab-history").setAttribute("aria-pressed",String(view==="history"));
+  if(view==="history") renderHistory(); else { renderCheckin(); renderPicker(); }
+}
+$("#tab-train").onclick=()=>show("train"); $("#tab-history").onclick=()=>show("history");
+renderCheckin();
+renderPicker();
+</script>
+
+</body>
+</html>
