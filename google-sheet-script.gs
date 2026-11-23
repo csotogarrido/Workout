@@ -10,7 +10,7 @@
 const SYNC_CODE = 'CHANGE-ME';
 
 const SESSIONS_HEADER = ['Date', 'Session', 'Name', 'Result', 'Sets as planned', 'Pain after', 'Feel', 'Stability',
-  'Check: signs', 'Check: felt', 'Check: pain areas', 'Check: pain level', 'Check: cueca', 'Check: breathing', 'Comments', 'Entry id'];
+  'Check: signs', 'Check: felt', 'Check: pain areas', 'Check: pain level', 'Check: cueca', 'Check: breathing', 'Comments', 'Entry id', 'Edited'];
 const SETS_HEADER = ['Date', 'Session', 'Exercise', 'Set', 'Planned', 'Done', 'Unit', 'As planned', 'Entry id'];
 
 function sheet_(name, header) {
@@ -20,8 +20,9 @@ function sheet_(name, header) {
   if (sh.getLastRow() === 0) {
     sh.appendRow(header);
     sh.setFrozenRows(1);
-    sh.getRange(1, 1, 1, header.length).setFontWeight('bold');
   }
+  // Add any header cells a newer version of this script introduced.
+  sh.getRange(1, 1, 1, header.length).setValues([header]).setFontWeight('bold');
   return sh;
 }
 
@@ -37,7 +38,14 @@ function doPost(e) {
     const ids = sessions.getLastRow() > 1
       ? sessions.getRange(2, 16, sessions.getLastRow() - 1, 1).getValues().flat()
       : [];
-    if (ids.indexOf(entry.id) !== -1) return json_({ ok: true, duplicate: true });
+    const found = ids.indexOf(entry.id);
+    if (found !== -1) {
+      // Same session sent again: ignore it, unless it was edited in the app, then replace the old rows.
+      if (!entry.updated) return json_({ ok: true, duplicate: true });
+      sessions.deleteRow(found + 2);
+      const setIds = sets.getLastRow() > 1 ? sets.getRange(2, 9, sets.getLastRow() - 1, 1).getValues().flat() : [];
+      for (let i = setIds.length - 1; i >= 0; i--) if (setIds[i] === entry.id) sets.deleteRow(i + 2);
+    }
 
     const date = new Date(entry.date);
     const c = entry.check || {};
@@ -51,7 +59,7 @@ function doPost(e) {
       "'" + (setList.length ? planned + '/' + setList.length : (entry.steps || '')),  // leading ' keeps Sheets from turning 6/6 into a date
       entry.pain, entry.feel || '', entry.stab || '',
       c.flag || '', c.felt || '', c.noPain ? 'None' : (c.areas || []).join(', '), c.pain || '',
-      c.dance || '', c.breath || '', entry.notes || '', entry.id
+      c.dance || '', c.breath || '', entry.notes || '', entry.id, entry.updated ? new Date(entry.updated) : ''
     ]);
     setList.forEach(s => sets.appendRow([
       date, entry.session, s.ex, s.set, s.plan, s.done === null ? 'not done' : s.done, s.unit, s.full ? 'Yes' : 'No', entry.id
@@ -74,8 +82,8 @@ function doGet(e) {
   // Rebuild every saved session so the app shows the same history on every device.
   const sessions = sheet_('Sessions', SESSIONS_HEADER);
   const sets = sheet_('Sets', SETS_HEADER);
-  const sRows = sessions.getLastRow() > 1 ? sessions.getRange(2, 1, sessions.getLastRow() - 1, 16).getValues() : [];
-  const sShown = sessions.getLastRow() > 1 ? sessions.getRange(2, 1, sessions.getLastRow() - 1, 16).getDisplayValues() : [];
+  const sRows = sessions.getLastRow() > 1 ? sessions.getRange(2, 1, sessions.getLastRow() - 1, 17).getValues() : [];
+  const sShown = sessions.getLastRow() > 1 ? sessions.getRange(2, 1, sessions.getLastRow() - 1, 17).getDisplayValues() : [];
   const tRows = sets.getLastRow() > 1 ? sets.getRange(2, 1, sets.getLastRow() - 1, 9).getValues() : [];
   const setsById = {};
   tRows.forEach(r => {
@@ -93,7 +101,7 @@ function doGet(e) {
       id: id, date: iso(r[0]), session: String(r[1]), name: String(r[2]),
       pain: r[5] === '' ? null : Number(r[5]), feel: r[6] || null, stab: r[7] || null, notes: r[14] || '',
       check: r[8] ? { flag: r[8], felt: r[9] || null, areas: areas, noPain: r[10] === 'None', pain: r[11] || null, dance: r[12] || null, breath: r[13] || null } : { areas: [] },
-      synced: true
+      updated: r[16] ? iso(r[16]) : null, synced: true
     };
     if (setsById[id]) entry.sets = setsById[id]; else entry.steps = shown[4];
     return entry;

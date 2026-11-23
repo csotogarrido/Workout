@@ -82,6 +82,12 @@ textarea{font:inherit;width:100%;min-height:64px;padding:8px;border-radius:8px;b
 .verdict.stop{background:var(--part-soft);border:1.5px solid var(--part)}
 .verdict b{font-family:var(--font-head);font-weight:400;letter-spacing:.04em;font-size:1.7rem;color:var(--accent)}
 .verdict p{margin:0}
+.titem{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px}
+.titem .check{flex:1 1 200px;min-width:0}
+.timer.ready{background:var(--part);border-color:var(--part);color:#000}
+.load{margin:0;font-size:.92rem;color:var(--muted)}
+.load b{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+.editbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;border:1.5px solid var(--part);background:var(--part-soft);border-radius:12px;padding:10px 14px}
 .hist{display:grid;gap:10px}
 details.hitem > summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 details.hitem > summary::-webkit-details-marker{display:none}
@@ -134,35 +140,37 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px soli
 
 <script>
 const IMG = id => `https://res.cloudinary.com/m1gcufl1/image/upload/${id}.png`;
+// Timed items: secs per round, rounds = 2 for "per leg" items (pre-count 5 s before each round).
 const WARMUP = [
-  "Pelvic tilts on your back, knees bent, slow breathing: 10 rocks",
-  "Knees to chest, gentle rock: 30 s",
-  "Stand up and march in place with easy arm swings: 1 min"
+  {t:"Pelvic tilts on your back, knees bent, slow breathing (about 10 rocks)", secs:45},
+  {t:"Knees to chest, gentle rock", secs:30},
+  {t:"Stand up and march in place with easy arm swings", secs:60}
 ];
 const SESSIONS = {
   A:{name:"Legs and glutes", exercises:[
-    {name:"Box squat to a chair", sets:2, reps:"8–10", plan:10, unit:"reps", equip:"Bodyweight, then 1 DB held at the chest", cue:"Touch the chair lightly, don't sit. Knees over the 2nd and 3rd toes.", between:"Standing table, hands on the chair back", next:"Standing table at the wall, then put the ankle cuff on", img:"v1795389601/e7206bc2-401e-4711-b002-c7fdef3931e6"},
-    {name:"Standing hip abduction", sets:2, reps:"10 per leg", plan:10, unit:"reps", equip:"Ankle cuff on the hook, yellow or green", cue:"Hold the wall, leg out to the side, toes forward, no leaning.", between:"Other leg is the rest. After both legs: standing table at the wall", next:"Lie on the mat: knees to chest", img:"v1795389679/1ca36cd8-1c0d-45ba-affe-641882708888"},
-    {name:"Glute bridge", sets:2, reps:"10, 2 s hold at top", plan:10, unit:"reps", equip:"Loop band above the knees", cue:"Ribs down, stop when hips and knees line up. Don't arch the low back.", between:"Knees to chest", next:null, img:"v1795389746/0a15a2e9-1580-4c19-845f-198a47af97e1"}],
-    cooldown:["Lying hamstring stretch: 30 s per leg","Child's pose: 45 s"]},
+    {name:"Box squat to a chair", sets:2, reps:"8–10", plan:10, unit:"reps", equip:"Chair behind you. Hold the dumbbell vertically against your chest (goblet hold).", load:"Weeks 1–2: no weight. Then 1 short handle with one 1 kg plate on each side (handle + 2 kg).", cue:"Touch the chair lightly, don't sit. Knees over the 2nd and 3rd toes.", between:"Standing table, hands on the chair back", next:"Standing table at the wall, then put the ankle cuff on", img:"v1795389601/e7206bc2-401e-4711-b002-c7fdef3931e6"},
+    {name:"Standing hip abduction", sets:2, reps:"10 per leg", plan:10, unit:"reps", side:"leg", equip:"Ankle cuff on the hook, hand on the wall.", load:"Band: yellow to start, green when 10 feel easy.", cue:"Leg out to the side, toes forward, no leaning.", between:"Standing table at the wall", next:"Lie on the mat: knees to chest", img:"v1795389679/1ca36cd8-1c0d-45ba-affe-641882708888"},
+    {name:"Glute bridge", sets:2, reps:"10, 2 s hold at top", plan:10, unit:"reps", equip:"Mat. Loop band just above the knees.", load:"Loop band only, no weight.", cue:"Ribs down, stop when hips and knees line up. Don't arch the low back.", between:"Knees to chest", next:null, img:"v1795389746/0a15a2e9-1580-4c19-845f-198a47af97e1"}],
+    cooldown:[{t:"Lying hamstring stretch, strap band around the foot", secs:30, rounds:2, per:"leg"},{t:"Child's pose, knees wide", secs:45}]},
   B:{name:"Upper body", exercises:[
-    {name:"Supported one-arm row", sets:2, reps:"10 per arm", plan:10, unit:"reps", equip:"1 DB, free hand (or fist) on the kitchen counter", cue:"Standing-table position, one foot forward, counter holds your back flat. Elbow back toward the hip, squeeze the shoulder blade. No twisting.", between:"Other arm is the rest. After both arms: standing table at the counter", next:"Standing table at the counter, put the dumbbell down", img:"v1795390455/992cb052-022b-40dd-9980-b08521e7ae73"},
-    {name:"Incline push-up", sets:2, reps:"6–10", plan:10, unit:"reps", equip:"Hands on the kitchen counter, gripping dumbbell handles or on fists", cue:"Neutral wrists. Stop well before the shoulders complain.", between:"Standing table at the counter", next:"Lie on the mat: knees to chest", img:"v1795389872/94a3373a-12af-49fc-b2b7-dbe5bf6b9cf6"},
-    {name:"Floor press", sets:2, reps:"10", plan:10, unit:"reps", equip:"2 DB, lying on the mat, knees bent", cue:"Palms facing each other. Elbows stop at the floor, which protects the shoulders.", between:"Knees to chest, weights resting beside you", next:null, img:"v1795389919/6436993b-40f4-4d83-9eca-7d07b3a32c38"}],
-    cooldown:["Child's pose: 45 s","Knees to chest: 30 s, then stand up slowly"]},
+    {name:"Supported one-arm row", sets:2, reps:"10 per arm", plan:10, unit:"reps", side:"arm", equip:"Free hand (or fist) on the kitchen counter, one foot forward, back flat like the standing table.", load:"1 short handle with two 1 kg plates on each side (handle + 4 kg).", cue:"Pull the elbow back toward the hip and squeeze the shoulder blade. No twisting.", between:"Standing table at the counter", next:"Push a sturdy chair against the wall, then standing table at the counter", img:"v1795390455/992cb052-022b-40dd-9980-b08521e7ae73"},
+    {name:"Incline push-up", sets:2, reps:"6–10", plan:10, unit:"reps", equip:"Hands on the front edge of a sturdy chair seat pushed against the wall (about 45 cm high). Feet on the floor behind you.", load:"Bodyweight. Hands flat, or on fists if the right wrist complains. Too hard: use a higher surface such as the bed edge. Too easy: a lower one.", cue:"Body in one straight line from head to heels. Lower the chest to the edge of the seat, elbows at about 45°, push back up. Stop well before the shoulders complain.", between:"Stand up: standing table, hands on the chair back", next:"Lie on the mat: knees to chest", img:"v1795389872/94a3373a-12af-49fc-b2b7-dbe5bf6b9cf6"},
+    {name:"Floor press", sets:2, reps:"10", plan:10, unit:"reps", equip:"Lying on the mat, knees bent, one dumbbell in each hand.", load:"2 short handles, each with one 1 kg plate on each side (handle + 2 kg each).", cue:"Palms facing each other. Elbows stop at the floor, which protects the shoulders.", between:"Knees to chest, weights resting beside you", next:null, img:"v1795389919/6436993b-40f4-4d83-9eca-7d07b3a32c38"}],
+    cooldown:[{t:"Child's pose, knees wide", secs:45},{t:"Knees to chest, then stand up slowly", secs:30}]},
   C:{name:"Core and balance", exercises:[
-    {name:"Dead bug", sets:2, reps:"6 per side", plan:6, unit:"reps", equip:"Mat", cue:"Low back stays gently pressed into the floor. Move slowly.", between:"Knees to chest", next:"Roll to hands and knees: child's pose", img:"v1795389975/daf1200d-2b34-4379-b218-10ffdd41cf5e"},
-    {name:"Bird dog", sets:2, reps:"6 per side, 3 s hold", plan:6, unit:"reps", equip:"Mat, on fists to spare the wrist", cue:"Reach long, not high. Hips stay level.", between:"Child's pose", next:"Stand up at the wall: standing table", img:"v1795390036/244398a7-3cdc-4692-96fc-86424070fd22"},
-    {name:"Single-leg stance", sets:2, reps:"30 s per leg", plan:30, unit:"s", equip:"Near the wall", cue:"Soft knee, kneecap over the toes. Good carry-over to cueca stances.", between:"Other leg is the rest. After both legs: standing table", next:null, img:"v1795390121/2ab0b3e1-e9be-449f-9046-ad21955997d0"}],
-    cooldown:["Standing table: 30 s","Lie down: knees to chest 30 s","Lying hamstring stretch: 30 s per leg"]},
+    {name:"Dead bug", sets:2, reps:"6 per side, alternating", plan:6, unit:"reps", equip:"Mat.", load:"Bodyweight.", cue:"Low back stays gently pressed into the floor. Move slowly.", between:"Knees to chest", next:"Roll to hands and knees: child's pose", img:"v1795389975/daf1200d-2b34-4379-b218-10ffdd41cf5e"},
+    {name:"Bird dog", sets:2, reps:"6 per side, alternating, 3 s hold", plan:6, unit:"reps", equip:"Mat, on fists to spare the wrist.", load:"Bodyweight.", cue:"Reach long, not high. Hips stay level.", between:"Child's pose", next:"Stand up at the wall: standing table", img:"v1795390036/244398a7-3cdc-4692-96fc-86424070fd22"},
+    {name:"Single-leg stance", sets:2, reps:"30 s per leg", plan:30, unit:"s", side:"leg", equip:"Near the wall, fingertips ready to touch it.", load:"Bodyweight.", cue:"Soft knee, kneecap over the toes. Good carry-over to cueca stances.", between:"Standing table at the wall", next:null, img:"v1795390121/2ab0b3e1-e9be-449f-9046-ad21955997d0"}],
+    cooldown:[{t:"Standing table", secs:30},{t:"Lie down: knees to chest", secs:30},{t:"Lying hamstring stretch, strap band around the foot", secs:30, rounds:2, per:"leg"}]},
   D:{name:"Back of the body", exercises:[
-    {name:"Romanian deadlift, short range", sets:2, reps:"8", plan:8, unit:"reps", equip:"2 DB, light. Before set 1: 5 practice hinges with the long bar along your spine", cue:"Hips back, flat back, soft knees. Lower only to just below the knees. Physio to confirm.", between:"Standing table, weights on the floor", next:"Standing table at the wall, then put the ankle cuff on", img:"v1795390196/44b6ea69-8abd-44ed-a691-0b8f00d3f737"},
-    {name:"Standing hamstring curl", sets:2, reps:"10 per leg", plan:10, unit:"reps", equip:"Ankle cuff on the hook, facing the wall", cue:"Heel toward the bottom, thigh stays still.", between:"Other leg is the rest. After both legs: standing table at the wall", next:"Lie on the mat: knees to chest", img:"v1795390274/2fd68421-0226-44b7-be6a-d36e73e8e78e"},
-    {name:"Bridge march", sets:2, reps:"6 per side", plan:6, unit:"reps", equip:"Mat", cue:"Hold a bridge, lift one foot a few cm, hips stay level.", between:"Knees to chest", next:null, img:"v1795390327/da60e7fc-b460-4f28-b6e2-97b7ead2bee1"}],
-    cooldown:["Lying hamstring stretch: 30 s per leg","Child's pose: 45 s"]},
+    {name:"Romanian deadlift, short range", sets:2, reps:"8", plan:8, unit:"reps", equip:"One dumbbell in each hand. Before set 1: 5 practice hinges with the long bar along your spine (touching head, upper back and tailbone).", load:"2 short handles, each with one 1 kg plate on each side (handle + 2 kg each).", cue:"Hips back, flat back, soft knees. Lower only to just below the knees. Physio to confirm.", between:"Standing table, weights on the floor", next:"Standing table at the wall, then put the ankle cuff on", img:"v1795390196/44b6ea69-8abd-44ed-a691-0b8f00d3f737"},
+    {name:"Standing hamstring curl", sets:2, reps:"10 per leg", plan:10, unit:"reps", side:"leg", equip:"Ankle cuff on the hook, facing the wall, hands on the wall.", load:"Band: yellow to start, green when 10 feel easy.", cue:"Heel toward the bottom, thigh stays still.", between:"Standing table at the wall", next:"Lie on the mat: knees to chest", img:"v1795390274/2fd68421-0226-44b7-be6a-d36e73e8e78e"},
+    {name:"Bridge march", sets:2, reps:"6 per side, alternating", plan:6, unit:"reps", equip:"Mat.", load:"Bodyweight.", cue:"Hold a bridge, lift one foot a few cm, hips stay level.", between:"Knees to chest", next:null, img:"v1795390327/da60e7fc-b460-4f28-b6e2-97b7ead2bee1"}],
+    cooldown:[{t:"Lying hamstring stretch, strap band around the foot", secs:30, rounds:2, per:"leg"},{t:"Child's pose, knees wide", secs:45}]},
   E:{name:"Easy day", easy:true, steps:[
-    "Warm-up steps 1 to 3 (2 min)","Lying hamstring stretch: 45 s per leg","Knees to chest: 45 s","Child's pose: 30 s, twice","Standing table: 30 s, twice",
-    "Slow standing hip circles holding the wall: 5 per direction per leg, stop before any groin pinch","Seated sciatic nerve glide: 8 per leg, gentle, no tingling (physio to confirm)","Easy walk: 5 min"]}
+    {t:"Pelvic tilts on your back, slow breathing", secs:45},{t:"Knees to chest, gentle rock", secs:30},{t:"March in place with easy arm swings", secs:60},
+    {t:"Lying hamstring stretch, strap band around the foot", secs:45, rounds:2, per:"leg"},{t:"Knees to chest", secs:45},{t:"Child's pose, knees wide (twice)", secs:30, rounds:2, per:"round"},{t:"Standing table (twice)", secs:30, rounds:2, per:"round"},
+    {t:"Slow standing hip circles holding the wall, small range, stop before any groin pinch", secs:45, rounds:2, per:"leg"},{t:"Seated sciatic nerve glide, gentle, no tingling (physio to confirm)", secs:45, rounds:2, per:"leg"},{t:"Easy walk", secs:300}]}
 };
 const LABEL = {A:"A",B:"B",C:"C",D:"D",E:"Easy"};
 const KEY = "hss-log-v1";
@@ -183,7 +191,7 @@ let store = [];
 try{ store = JSON.parse(localStorage.getItem(KEY)||"[]"); }catch(e){ store = []; }
 function persist(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); return true; }catch(e){ return false; } }
 
-let current = null, state = null;
+let current = null, state = null, editingId = null;
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 
@@ -299,6 +307,7 @@ function renderPicker(){
 }
 
 function select(k){
+  editingId = null;
   current = k;
   const s = SESSIONS[k];
   state = { warm:WARMUP.map(()=>false), sets:{}, cool:(s.cooldown||[]).map(()=>false), easy:(s.steps||[]).map(()=>false), pain:null, feel:null, stab:null, notes:"" };
@@ -309,16 +318,21 @@ function select(k){
 function thumb(ex,i){
   return `<div class="thumb" data-fallback="${i+1}"><img src="${IMG(ex.img)}" alt="${esc(ex.name)}" loading="lazy" onerror="this.parentNode.textContent=this.parentNode.dataset.fallback"></div>`;
 }
+function timerLabel(secs,rounds,per){ const m = secs>=60 && secs%60===0 ? `${secs/60} min` : `${secs} s`; return rounds>1 ? `▶ ${m} × ${rounds}${per&&per!=="round"?" ("+per+"s)":""}` : `▶ ${m}`; }
+function timerBtn(secs,rounds,per,key,i){
+  return `<button class="timer" data-secs="${secs}" data-rounds="${rounds||1}" data-per="${per||""}"${key?` data-tick="${key}-${i}"`:""}>${timerLabel(secs,rounds||1,per)}</button>`;
+}
 function restRow(kind, text, secs){
-  return `<div class="rest"><div class="what"><b>${kind}</b>${esc(text)}</div><button class="timer" data-secs="${secs}">${secs} s rest</button></div>`;
+  return `<div class="rest"><div class="what"><b>${kind}</b>${esc(text)}</div>${timerBtn(secs,1,"")}</div>`;
 }
 function checklist(items, key){
-  return `<div style="display:grid;gap:8px">${items.map((t,i)=>`<label class="check"><input type="checkbox" id="${key}-${i}" data-key="${key}" data-i="${i}" ${state[key][i]?"checked":""}><span>${esc(t)}</span></label>`).join("")}</div>`;
+  return `<div style="display:grid;gap:10px">${items.map((it,i)=>`<div class="titem"><label class="check"><input type="checkbox" id="${key}-${i}" data-key="${key}" data-i="${i}" ${state[key][i]?"checked":""}><span>${esc(it.t)}</span></label>${timerBtn(it.secs,it.rounds,it.per,key,i)}</div>`).join("")}</div>`;
 }
 
 function renderSession(){
   const s = SESSIONS[current], el = $("#session");
   let h = `<div><span class="label">2 · Session ${LABEL[current]}</span><h2>${esc(s.name)}</h2></div>`;
+  if(editingId){ const e=store.find(x=>x.id===editingId); h += `<div class="editbar"><span>Editing the session from <b>${e?fmtDay(e.date):""}</b>. Change what you need and press Save changes.</span><button class="btn" id="cancel-edit">Cancel</button></div>`; }
   if(s.easy){
     h += `<section class="card"><h3>Mobility and relief, 15 min</h3>${checklist(s.steps,"easy")}</section>`;
   } else {
@@ -327,14 +341,17 @@ function renderSession(){
       h += `<section class="card"><div class="exhead">${thumb(ex,i)}<div>
         <span class="label">Exercise ${i+1} of ${s.exercises.length}</span><h3>${esc(ex.name)}</h3>
         <div class="dose">${ex.sets} × ${esc(ex.reps)}</div><p class="meta">${esc(ex.equip)}</p></div></div>
+        <p class="load"><b>Weight</b>${esc(ex.load)}</p>
         <p class="cue">${esc(ex.cue)}</p><div class="sets">`;
       for(let n=0;n<ex.sets;n++){
         const id=`${i}-${n}`, v=state.sets[id];
         const cls = v==null?"":(v.full?"full":"partial");
-        h += `<div class="set ${cls}" data-id="${id}"><span class="n">Set ${n+1}</span>
+        const sideNote = ex.side ? `<span class="hint" style="flex-basis:100%">${ex.side==="arm"?"Right arm, then left arm straight away. No rest between arms.":"Right leg, then left leg straight away. No rest between legs."}</span>` : "";
+        const setTimer = ex.unit==="s" ? timerBtn(ex.plan, ex.side?2:1, ex.side||"") : "";
+        h += `<div class="set ${cls}" data-id="${id}"><span class="n">Set ${n+1}</span>${setTimer}
           <button class="btn ok" data-full="${id}" aria-pressed="${!!(v&&v.full)}">Done as planned</button>
-          <label for="in-${id}">or I did <input type="number" min="0" inputmode="numeric" id="in-${id}" data-part="${id}" placeholder="${ex.plan}" value="${v&&!v.full?v.done:""}"> ${ex.unit==="s"?"s":"reps"}</label></div>`;
-        if(n<ex.sets-1) h += restRow("Between sets", ex.between, 20);
+          <label for="in-${id}">or I did <input type="number" min="0" inputmode="numeric" id="in-${id}" data-part="${id}" placeholder="${ex.plan}" value="${v&&!v.full?v.done:""}"> ${ex.unit==="s"?"s":"reps"}${ex.side?" per "+ex.side:""}</label>${sideNote}</div>`;
+        if(n<ex.sets-1) h += restRow(ex.side?`Between sets (after both ${ex.side}s)`:"Between sets", ex.between, 20);
       }
       h += `</div>`;
       if(ex.next) h += restRow("Before the next exercise", ex.next, 30);
@@ -347,7 +364,7 @@ function renderSession(){
     <div class="row"><span class="label">Feel</span><div class="chips" data-chip="feel">${["Burn (normal work)","Inflamed","Nerve (tingling)","Nothing special"].map(v=>`<button data-v="${v}" aria-pressed="${state.feel===v}">${v}</button>`).join("")}</div></div>
     <div class="row"><span class="label">Stability</span><div class="chips" data-chip="stab">${["Better","Same","Worse"].map(v=>`<button data-v="${v}" aria-pressed="${state.stab===v}">${v}</button>`).join("")}</div></div>
     <div class="row"><label class="label" for="notes">Notes (dance, sleep, pollen, load used)</label><textarea id="notes">${esc(state.notes)}</textarea></div>
-    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn primary" id="save">Save session</button><span class="progress" id="prog"></span></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn primary" id="save">${editingId?"Save changes":"Save session"}</button><span class="progress" id="prog"></span></div>
     </section>`;
   el.innerHTML = h;
   bind(); updateProgress();
@@ -374,6 +391,7 @@ function bind(){
   $("#notes").oninput=e=>state.notes=e.target.value;
   el.querySelectorAll(".timer").forEach(t=>t.onclick=()=>runTimer(t));
   $("#save").onclick=save;
+  const ce=$("#cancel-edit"); if(ce) ce.onclick=()=>{ editingId=null; current=null; state=null; $("#session").innerHTML=""; renderPicker(); show("history"); };
 }
 function refreshSet(id){
   const row=document.querySelector(`.set[data-id="${id}"]`), v=state.sets[id];
@@ -391,25 +409,55 @@ function updateProgress(){
 
 let audioCtx=null;
 function beep(){ try{ audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)(); const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.frequency.value=880; g.gain.value=.15; o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+.35);}catch(e){} try{navigator.vibrate&&navigator.vibrate(300);}catch(e){} }
+function tone(freq,len){ try{ audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)(); const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.frequency.value=freq; g.gain.value=.15; o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+len);}catch(e){} }
+const PRE=5;
 function runTimer(t){
-  if(t._iv){ clearInterval(t._iv); t._iv=null; t.classList.remove("running"); t.textContent=`${t.dataset.secs} s rest`; return; }
-  let left=+t.dataset.secs; t.classList.add("running"); t.textContent=`${left} s`;
+  const secs=+t.dataset.secs, rounds=+t.dataset.rounds||1, per=t.dataset.per;
+  if(t._iv){ clearInterval(t._iv); t._iv=null; t.classList.remove("running","ready"); t.textContent=timerLabel(secs,rounds,per); return; }
   try{ audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
-  t._iv=setInterval(()=>{ left--; t.textContent=`${left} s`; if(left<=0){ clearInterval(t._iv); t._iv=null; t.classList.remove("running"); t.textContent="Done ✓"; beep(); } },1000);
+  const sideName = r => per==="leg"||per==="arm" ? (r===0?"Right "+per:"Left "+per) : (rounds>1?`Round ${r+1}`:"");
+  let round=0, phase="pre", left=PRE;
+  const show=()=>{ t.textContent = phase==="pre" ? `${round===0?"Get ready":"Switch"}${sideName(round)?" · "+sideName(round):""} ${left}` : `${sideName(round)?sideName(round)+" · ":""}${left} s`; };
+  t.classList.add("running","ready"); show(); tone(660,.08);
+  t._iv=setInterval(()=>{
+    left--;
+    if(left<=0){
+      if(phase==="pre"){ phase="go"; left=secs; t.classList.remove("ready"); tone(990,.25); }
+      else if(round<rounds-1){ round++; phase="pre"; left=PRE; t.classList.add("ready"); beep(); }
+      else { clearInterval(t._iv); t._iv=null; t.classList.remove("running","ready"); t.textContent="Done ✓"; beep();
+        if(t.dataset.tick){ const c=document.getElementById(t.dataset.tick); if(c&&!c.checked){ c.checked=true; c.dispatchEvent(new Event("change")); } }
+        return; }
+    } else if(phase==="pre"){ tone(660,.08); }
+    show();
+  },1000);
 }
 
+function editSession(id){
+  const e=store.find(x=>x.id===id); if(!e) return;
+  const s=SESSIONS[e.session]; if(!s) return;
+  current=e.session; editingId=id;
+  state={ warm:WARMUP.map(()=>true), sets:{}, cool:(s.cooldown||[]).map(()=>true), easy:(s.steps||[]).map(()=>false), pain:e.pain??null, feel:e.feel??null, stab:e.stab??null, notes:e.notes||"" };
+  if(s.easy){ const n=parseInt(String(e.steps||"0").split("/")[0],10)||0; state.easy=state.easy.map((_,i)=>i<n); }
+  else (e.sets||[]).forEach(x=>{ const i=s.exercises.findIndex(ex=>ex.name===x.ex); if(i<0||x.done==null) return; state.sets[`${i}-${x.set-1}`]={full:!!x.full,done:x.done}; });
+  show("train"); renderPicker(); renderSession();
+  $("#session").scrollIntoView({behavior:"smooth",block:"start"});
+}
 function save(){
   const s=SESSIONS[current];
-  const entry={ date:new Date().toISOString(), session:current, name:s.name, pain:state.pain, feel:state.feel, stab:state.stab, notes:state.notes.trim(), check:{...check}, id:"s"+Date.now().toString(36)+Math.random().toString(36).slice(2,6), synced:false };
+  const old = editingId ? store.find(x=>x.id===editingId) : null;
+  const entry={ date: old?old.date:new Date().toISOString(), session:current, name:s.name, pain:state.pain, feel:state.feel, stab:state.stab, notes:state.notes.trim(), check: old?(old.check||{areas:[]}):{...check}, id: old?old.id:"s"+Date.now().toString(36)+Math.random().toString(36).slice(2,6), synced:false };
+  if(old) entry.updated=new Date().toISOString();
   if(s.easy){ entry.steps=`${state.easy.filter(Boolean).length}/${s.steps.length}`; }
   else {
     entry.sets=[]; s.exercises.forEach((ex,i)=>{ for(let n=0;n<ex.sets;n++){ const v=state.sets[`${i}-${n}`]; entry.sets.push({ex:ex.name,set:n+1,plan:ex.plan,unit:ex.unit,done:v?v.done:null,full:v?v.full:false}); } });
   }
-  store.push(entry);
+  if(old) store[store.indexOf(old)]=entry; else store.push(entry);
   const ok=persist();
-  toast(ok?"Session saved":"Saved for now. This browser is not keeping data, copy it from History.");
-  sendToSheet(entry).then(sent=>{ if(sent) toast("Session saved and sent to your sheet"); });
-  current=null; state=null; check={areas:[]}; $("#session").innerHTML=""; renderCheckin(); renderPicker(); window.scrollTo({top:0,behavior:"smooth"});
+  toast(ok?(old?"Changes saved":"Session saved"):"Saved for now. This browser is not keeping data, copy it from History.");
+  sendToSheet(entry).then(sent=>{ if(sent) toast(old?"Changes saved and sent to your sheet":"Session saved and sent to your sheet"); });
+  const wasEdit=!!old;
+  current=null; state=null; editingId=null; check={areas:[]}; $("#session").innerHTML="";
+  if(wasEdit) show("history"); else { renderCheckin(); renderPicker(); window.scrollTo({top:0,behavior:"smooth"}); }
 }
 
 function entryText(e){
@@ -434,7 +482,9 @@ function detailHtml(e){
   h+=`<div><span class="k">After the session</span><p>Pain ${e.pain??"–"} · ${esc(e.feel??"feel not logged")} · stability ${esc(e.stab??"–")}</p></div>`;
   if(e.check&&e.check.flag){ const c=e.check;
     h+=`<div><span class="k">Check-in before</span><p>Signs: ${esc(c.flag??"–")} · felt ${esc(c.felt??"–")} · pain ${c.noPain?"none":esc(((c.areas||[]).join("/")+" "+(c.pain??"")).trim()||"–")} · cueca ${esc(c.dance??"–")} · breathing ${esc(c.breath??"–")}</p></div>`; }
-  h+=`<div><span class="k">Comments</span><p>${e.notes?esc(e.notes):"No comments"}</p></div></div>`;
+  h+=`<div><span class="k">Comments</span><p>${e.notes?esc(e.notes):"No comments"}</p></div>`;
+  if(e.updated) h+=`<p class="hint">Edited ${fmtDay(e.updated)}</p>`;
+  h+=`<div><button class="btn" data-edit="${esc(e.id||"")}">Edit this session</button></div></div>`;
   return h;
 }
 function sheetCard(){
@@ -463,6 +513,7 @@ function renderHistory(){
       return `<details class="hitem"><summary><span><span class="hx">${LABEL[e.session]==="Easy"?"Easy day":"Session "+LABEL[e.session]}</span> <span class="when">${fmtDay(e.date)} · ${esc(e.name)}</span></span><span class="badge ${std?"":"adapted"}">${std?"Standard":"Adapted"}</span></summary>${detailHtml(e)}</details>`; }).join("")}</div>
     <pre class="export" id="export" hidden>${esc(items.map(entryText).join("\n"))}</pre></div>`;
   bindSheet();
+  el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editSession(b.dataset.edit));
   $("#copy").onclick=()=>{ const ex=$("#export"), txt=ex.textContent;
     const sel=()=>{ ex.hidden=false; const r=document.createRange(); r.selectNodeContents(ex); const s=getSelection(); s.removeAllRanges(); s.addRange(r); toast("Text selected, copy it from here"); };
     try{ navigator.clipboard.writeText(txt).then(()=>toast("Copied"),sel); }catch(e){ sel(); } };
@@ -478,7 +529,8 @@ function syncFromSheet(){
   fetch(sheetUrl+(sheetUrl.includes("?")?"&":"?")+"action=list&key="+encodeURIComponent(syncCode)).then(r=>r.json()).then(d=>{
     if(!d||!Array.isArray(d.entries)) return;
     const have=new Set(store.map(e=>e.id)); let added=0;
-    d.entries.forEach(e=>{ if(!have.has(e.id)){ store.push(e); added++; } else { const l=store.find(x=>x.id===e.id); if(l) l.synced=true; } });
+    d.entries.forEach(e=>{ if(!have.has(e.id)){ store.push(e); added++; } else { const i=store.findIndex(x=>x.id===e.id), l=store[i];
+      if(l && e.updated && (!l.updated || new Date(e.updated)>new Date(l.updated))){ store[i]=e; added++; } else if(l && !(l.updated && (!e.updated || new Date(l.updated)>new Date(e.updated)))) l.synced=true; } });
     store.sort((a,b)=>new Date(a.date)-new Date(b.date)); persist();
     store.filter(e=>!e.synced && e.id).forEach(e=>sendToSheet(e));
     if(added){ if(!$("#history").hidden) renderHistory(); else { renderCheckin(); renderPicker(); } }
