@@ -167,6 +167,9 @@ const SESSIONS = {
 const LABEL = {A:"A",B:"B",C:"C",D:"D",E:"Easy"};
 const KEY = "hss-log-v1";
 const SHEET_KEY = "hss-sheet-url";
+const CODE_KEY = "hss-sync-code";
+let syncCode = "";
+try{ syncCode = localStorage.getItem(CODE_KEY)||""; }catch(e){}
 const DEFAULT_SHEET = "https://script.google.com/macros/s/AKfycbyV3vrfe2UaJBB6zuhoa48gxEjmNbwsQL9JjdLsE4xp40dFG5jYS-TcClMbMJoV-nYr/exec";
 let sheetUrl = DEFAULT_SHEET;
 try{ const v = localStorage.getItem(SHEET_KEY); if(v) sheetUrl = v; }catch(e){}
@@ -437,10 +440,14 @@ function detailHtml(e){
 function sheetCard(){
   return `<div class="card" style="gap:8px"><span class="label">Google Sheet link</span>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="sheet" type="url" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(sheetUrl)}" style="flex:1 1 220px;min-width:0;font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)"><button class="btn" id="sheet-save">Save link</button></div>
+      <span class="label" style="margin-top:6px">Sync code</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="code" type="password" autocomplete="off" placeholder="Your private code" value="${esc(syncCode)}" style="flex:1 1 220px;min-width:0;font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)"><button class="btn" id="code-save">Save code</button></div>
+      <p class="hint">${syncCode?"Code saved. History from your sheet loads on this device.":"Enter the code from your sheet's script to see sessions saved on your other devices."}</p>
       <p class="hint">${sheetUrl?`Connected. ${store.filter(e=>!e.synced).length} session(s) not sent yet.`:"Paste the web app link from your sheet's script. Each saved session is then also added to the sheet."}</p>
       ${sheetUrl&&store.some(e=>!e.synced)?`<div><button class="btn primary" id="sheet-sync">Send unsent sessions</button></div>`:""}</div>`;
 }
 function bindSheet(){
+  $("#code-save").onclick=()=>{ syncCode=$("#code").value.trim(); try{ localStorage.setItem(CODE_KEY,syncCode); }catch(e){} toast(syncCode?"Code saved, loading history":"Code removed"); renderHistory(); syncFromSheet(); };
   $("#sheet-save").onclick=()=>{ sheetUrl=$("#sheet").value.trim(); try{ localStorage.setItem(SHEET_KEY,sheetUrl); }catch(e){} toast(sheetUrl?"Sheet link saved":"Sheet link removed"); renderHistory(); };
   const sy=$("#sheet-sync"); if(sy) sy.onclick=async()=>{ let n=0; for(const e of store.filter(x=>!x.synced)){ if(await sendToSheet(e)) n++; } toast(`${n} session(s) sent`); renderHistory(); };
 }
@@ -466,9 +473,21 @@ function show(view){
   $("#tab-train").setAttribute("aria-pressed",String(view==="train")); $("#tab-history").setAttribute("aria-pressed",String(view==="history"));
   if(view==="history") renderHistory(); else { renderCheckin(); renderPicker(); }
 }
-$("#tab-train").onclick=()=>show("train"); $("#tab-history").onclick=()=>show("history");
+function syncFromSheet(){
+  if(!sheetUrl || !syncCode) return;
+  fetch(sheetUrl+(sheetUrl.includes("?")?"&":"?")+"action=list&key="+encodeURIComponent(syncCode)).then(r=>r.json()).then(d=>{
+    if(!d||!Array.isArray(d.entries)) return;
+    const have=new Set(store.map(e=>e.id)); let added=0;
+    d.entries.forEach(e=>{ if(!have.has(e.id)){ store.push(e); added++; } else { const l=store.find(x=>x.id===e.id); if(l) l.synced=true; } });
+    store.sort((a,b)=>new Date(a.date)-new Date(b.date)); persist();
+    store.filter(e=>!e.synced && e.id).forEach(e=>sendToSheet(e));
+    if(added){ if(!$("#history").hidden) renderHistory(); else { renderCheckin(); renderPicker(); } }
+  }).catch(()=>{});
+}
+$("#tab-train").onclick=()=>show("train"); $("#tab-history").onclick=()=>{ show("history"); syncFromSheet(); };
 renderCheckin();
 renderPicker();
+syncFromSheet();
 </script>
 
 </body>
