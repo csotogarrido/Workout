@@ -433,22 +433,28 @@ function detailHtml(e){
   h+=`<div><span class="k">Comments</span><p>${e.notes?esc(e.notes):"No comments"}</p></div></div>`;
   return h;
 }
+function sheetCard(){
+  return `<div class="card" style="gap:8px"><span class="label">Google Sheet link</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="sheet" type="url" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(sheetUrl)}" style="flex:1 1 220px;min-width:0;font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)"><button class="btn" id="sheet-save">Save link</button></div>
+      <p class="hint">${sheetUrl?`Connected. ${store.filter(e=>!e.synced).length} session(s) not sent yet.`:"Paste the web app link from your sheet's script. Each saved session is then also added to the sheet."}</p>
+      ${sheetUrl&&store.some(e=>!e.synced)?`<div><button class="btn primary" id="sheet-sync">Send unsent sessions</button></div>`:""}</div>`;
+}
+function bindSheet(){
+  $("#sheet-save").onclick=()=>{ sheetUrl=$("#sheet").value.trim(); try{ localStorage.setItem(SHEET_KEY,sheetUrl); }catch(e){} toast(sheetUrl?"Sheet link saved":"Sheet link removed"); renderHistory(); };
+  const sy=$("#sheet-sync"); if(sy) sy.onclick=async()=>{ let n=0; for(const e of store.filter(x=>!x.synced)){ if(await sendToSheet(e)) n++; } toast(`${n} session(s) sent`); renderHistory(); };
+}
 function renderHistory(){
   const el=$("#history");
-  if(!store.length){ el.innerHTML=`<div class="card"><h2>No sessions saved yet</h2><p class="hint">Finish a session in Train and press Save. Each one shows up here, with a summary you can copy and send for review.</p></div>`; return; }
+  if(!store.length){ el.innerHTML=`<div class="card"><h2>No sessions saved yet</h2><p class="hint">Finish a session in Train and press Save. Each one shows up here, with a summary you can copy and send for review.</p></div><div style="margin-top:14px;display:grid">${sheetCard()}</div>`; bindSheet(); return; }
   const items=[...store].reverse();
   el.innerHTML=`<div style="display:grid;gap:14px">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2>${store.length} saved session${store.length>1?"s":""}</h2><button class="btn primary" id="copy">Copy all as text</button></div>
-    <div class="card" style="gap:8px"><span class="label">Google Sheet link</span>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="sheet" type="url" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(sheetUrl)}" style="flex:1 1 220px;min-width:0;font:inherit;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg)"><button class="btn" id="sheet-save">Save link</button></div>
-      <p class="hint">${sheetUrl?`Connected. ${store.filter(e=>!e.synced).length} session(s) not sent yet.`:"Paste the web app link from your sheet's script. Each saved session is then also added to the sheet."}</p>
-      ${sheetUrl&&store.some(e=>!e.synced)?`<div><button class="btn primary" id="sheet-sync">Send unsent sessions</button></div>`:""}</div>
+    ${sheetCard()}
     <p class="hint">Tap a session to see the details.</p>
     <div class="hist">${items.map(e=>{ const std=isStandard(e);
       return `<details class="hitem"><summary><span><span class="hx">${LABEL[e.session]==="Easy"?"Easy day":"Session "+LABEL[e.session]}</span> <span class="when">${fmtDay(e.date)} · ${esc(e.name)}</span></span><span class="badge ${std?"":"adapted"}">${std?"Standard":"Adapted"}</span></summary>${detailHtml(e)}</details>`; }).join("")}</div>
     <pre class="export" id="export" hidden>${esc(items.map(entryText).join("\n"))}</pre></div>`;
-  $("#sheet-save").onclick=()=>{ sheetUrl=$("#sheet").value.trim(); try{ localStorage.setItem(SHEET_KEY,sheetUrl); }catch(e){} toast(sheetUrl?"Sheet link saved":"Sheet link removed"); renderHistory(); };
-  const sy=$("#sheet-sync"); if(sy) sy.onclick=async()=>{ let n=0; for(const e of store.filter(x=>!x.synced)){ if(await sendToSheet(e)) n++; } toast(`${n} session(s) sent`); renderHistory(); };
+  bindSheet();
   $("#copy").onclick=()=>{ const ex=$("#export"), txt=ex.textContent;
     const sel=()=>{ ex.hidden=false; const r=document.createRange(); r.selectNodeContents(ex); const s=getSelection(); s.removeAllRanges(); s.addRange(r); toast("Text selected, copy it from here"); };
     try{ navigator.clipboard.writeText(txt).then(()=>toast("Copied"),sel); }catch(e){ sel(); } };
